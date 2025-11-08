@@ -9,16 +9,32 @@ set -ouex pipefail
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
-# this installs a package from fedora repos
-dnf5 install -y tmux 
+# Enable video for streaming in Firefox
+dnf swap -y noopenh264 openh264
+dnf install -y gstreamer1-plugin-openh264
 
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+# Install fonts since nix fonts are broken af
+dnf install -y \
+    ansible \
+    apcupsd-gui \
+    containernetworking-plugins \
+    distrobox \
+    fira-code-fonts \
+    mock \
+    nmap \
+    openscap-containers \
+    podman-docker \
+    qemu \
+    rpmdevtools \
+    rpmlint \
+    tailscale
 
-#### Example for enabling a System Unit File
+# This is needed to allow nix to be installed/used
+install -d -m 0755 /nix
 
-systemctl enable podman.socket
+# TODO: not sure if best solution
+# workaround bootc container lint warnings
+echo 'd /var/lib/tailscale 0600 root root - -' > /usr/lib/tmpfiles.d/tailscale.conf
+echo 'd /var/lib/mock 0775 root mock - -' > /usr/lib/tmpfiles.d/mock.conf
+echo 'd /var/lib/rpm-state 0755 root root - -'  > /usr/lib/tmpfiles.d/filesystem.conf
+echo 'd /var/lib/rpm-state/gconf 0755 root root - -'  > /usr/lib/tmpfiles.d/gconf.conf
