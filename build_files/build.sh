@@ -27,7 +27,8 @@ dnf install -y \
     qemu \
     rpmdevtools \
     rpmlint \
-    tailscale
+    tailscale \
+    virt-manager
 
 # This is needed to allow nix to be installed/used
 install -d -m 0755 /nix
