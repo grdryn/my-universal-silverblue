@@ -17,6 +17,7 @@ dnf install -y gstreamer1-plugin-openh264
 dnf install -y \
     ansible \
     apcupsd-gui \
+    bcc-tools \
     containernetworking-plugins \
     distrobox \
     fira-code-fonts \
