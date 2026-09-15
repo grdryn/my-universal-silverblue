@@ -21,6 +21,7 @@ dnf install -y \
     containernetworking-plugins \
     distrobox \
     fira-code-fonts \
+    lego \
     mock \
     nmap \
     openscap-containers \
