@@ -23,6 +23,7 @@ dnf install -y \
     fira-code-fonts \
     lego \
     mock \
+    nix \
     nmap \
     openscap-containers \
     podman-docker \
