@@ -41,7 +41,9 @@ rm -rf /nix
 ln -sf /var/nix /nix
 
 # Create Nix store directories at boot via tmpfiles.d
+# /var/nix must be created first (parent of /nix/store) on the persistent /var partition
 cat >/usr/lib/tmpfiles.d/nix.conf <<'EOF'
+d /var/nix 0755 root root -
 d /nix/store 0755 root root -
 d /nix/store/.links 0755 root root -
 d /nix/var 0755 root root -
