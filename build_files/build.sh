@@ -35,31 +35,55 @@ dnf install -y \
 
 # This is needed to allow nix to be installed/used
 # /var is writable at runtime on Silverblue/bootc, while /nix on the root
-# filesystem is read-only. Symlink /nix -> /var/nix so Nix can write to it.
+# filesystem is read-only. Nix rejects symlinks for /nix, so we bind-mount
+# /var/nix over /nix at boot via a systemd mount unit, giving Nix a real
+# directory backed by persistent storage.
 install -d -m 0755 /var/nix
-rm -rf /nix
-ln -sf /var/nix /nix
+install -d -m 0755 /nix
+
+# Install systemd mount unit to bind-mount /var/nix over /nix at boot
+cat >/etc/systemd/system/nix.mount <<'EOF'
+[Unit]
+Description=Bind-mount /var/nix on /nix
+PropagatesStopTo=nix-daemon.service
+After=systemd-tmpfiles-setup.service
+Requires=systemd-tmpfiles-setup.service
+ConditionPathIsDirectory=/nix
+DefaultDependencies=no
+
+[Mount]
+What=/var/nix
+Where=/nix
+Type=none
+DirectoryMode=0755
+Options=bind
+
+[Install]
+RequiredBy=nix-daemon.service
+RequiredBy=nix-daemon.socket
+EOF
 
 # Create Nix store directories at boot via tmpfiles.d
-# /var/nix must be created first (parent of /nix/store) on the persistent /var partition
+# Paths use /var/nix (persistent /var partition), not /nix directly,
+# because tmpfiles runs before the nix.mount bind-mount at boot.
 cat >/usr/lib/tmpfiles.d/nix.conf <<'EOF'
 d /var/nix 0755 root root -
-d /nix/store 0755 root root -
-d /nix/store/.links 0755 root root -
-d /nix/var 0755 root root -
-d /nix/var/nix 0755 root root -
-d /nix/var/nix/db 0755 root root -
-d /nix/var/nix/daemon-socket 0755 root root -
-d /nix/var/nix/gcroots 0755 root root -
-d /nix/var/nix/profiles 0755 root root -
-d /nix/var/nix/userpool 0755 root root -
+d /var/nix/store 0755 root root -
+d /var/nix/store/.links 0755 root root -
+d /var/nix/var 0755 root root -
+d /var/nix/var/nix 0755 root root -
+d /var/nix/var/nix/db 0755 root root -
+d /var/nix/var/nix/daemon-socket 0755 root root -
+d /var/nix/var/nix/gcroots 0755 root root -
+d /var/nix/var/nix/profiles 0755 root root -
+d /var/nix/var/nix/userpool 0755 root root -
 EOF
 
 # Enable nix-daemon for multi-user Nix operation
-# The socket must be enabled too: nix-daemon.service has
-# ConditionPathIsReadWrite=/nix/var/nix/daemon-socket, which only becomes
-# true once the socket is active at boot.
-systemctl enable nix-daemon.socket nix-daemon.service
+# The mount must be enabled too: nix-daemon.socket listens on
+# /nix/var/nix/daemon-socket/socket, which only exists after nix.mount
+# bind-mounts /var/nix over /nix.
+systemctl enable nix.mount nix-daemon.socket nix-daemon.service
 
 # TODO: not sure if best solution
 # workaround bootc container lint warnings
