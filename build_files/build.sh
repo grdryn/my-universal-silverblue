@@ -60,7 +60,6 @@ Options=bind
 
 [Install]
 RequiredBy=nix-daemon.service
-RequiredBy=nix-daemon.socket
 EOF
 
 # Create Nix store directories at boot via tmpfiles.d
@@ -80,10 +79,9 @@ d /var/nix/var/nix/userpool 0755 root root -
 EOF
 
 # Enable nix-daemon for multi-user Nix operation
-# The mount must be enabled too: nix-daemon.socket listens on
-# /nix/var/nix/daemon-socket/socket, which only exists after nix.mount
-# bind-mounts /var/nix over /nix.
-systemctl enable nix.mount nix-daemon.socket nix-daemon.service
+# nix-daemon.service creates its own listening socket at
+# /nix/var/nix/daemon-socket/socket, so we don't need nix-daemon.socket.
+systemctl enable nix.mount nix-daemon.service
 
 # TODO: not sure if best solution
 # workaround bootc container lint warnings
