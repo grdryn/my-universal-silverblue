@@ -56,7 +56,10 @@ d /nix/var/nix/userpool 0755 root root -
 EOF
 
 # Enable nix-daemon for multi-user Nix operation
-systemctl enable nix-daemon.service
+# The socket must be enabled too: nix-daemon.service has
+# ConditionPathIsReadWrite=/nix/var/nix/daemon-socket, which only becomes
+# true once the socket is active at boot.
+systemctl enable nix-daemon.socket nix-daemon.service
 
 # TODO: not sure if best solution
 # workaround bootc container lint warnings
