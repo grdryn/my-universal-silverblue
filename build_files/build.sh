@@ -42,7 +42,9 @@ install -d -m 0755 /var/nix
 install -d -m 0755 /nix
 
 # Install systemd mount unit to bind-mount /var/nix over /nix at boot
-cat >/etc/systemd/system/nix.mount <<'EOF'
+# /usr/lib is replaced on bootc upgrade; /etc is preserved, so we write
+# here to ensure the new unit takes effect after upgrade.
+cat >/usr/lib/systemd/system/nix.mount <<'EOF'
 [Unit]
 Description=Bind-mount /var/nix on /nix
 PropagatesStopTo=nix-daemon.service
