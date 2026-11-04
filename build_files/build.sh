@@ -86,6 +86,23 @@ EOF
 # /nix/var/nix/daemon-socket/socket, so we don't need nix-daemon.socket.
 systemctl enable nix.mount nix-daemon.service
 
+### Podman rootful --userns=auto
+# Podman 6 resolves the subuid/subgid pool for the "containers" user via NSS,
+# so the helper account must exist. Create it at boot with sysusers: users
+# baked into /etc/passwd at build time do not reach already-installed systems
+# because of the bootc three-way merge of /etc.
+cat >/usr/lib/sysusers.d/containers.conf <<'EOF'
+u containers - "Helper user to reserve subuids and subgids for rootful Podman" / /usr/sbin/nologin
+EOF
+
+# Subuid/subgid pool used by rootful --userns=auto containers (quadlets with
+# UserNS=auto). Keep the range below Fedora's SUB_UID_MIN (524288) so it
+# cannot collide with ranges assigned to real users. Existing systems keep
+# their locally-merged /etc/subuid, so only fresh installs pick these up.
+for f in /etc/subuid /etc/subgid; do
+	grep -q '^containers:' "$f" || printf 'containers:100000:400000\n' >>"$f"
+done
+
 # TODO: not sure if best solution
 # workaround bootc container lint warnings
 # echo 'd /var/lib/tailscale 0600 root root - -' > /usr/lib/tmpfiles.d/tailscale.conf
