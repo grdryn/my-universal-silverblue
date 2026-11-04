@@ -28,6 +28,7 @@ dnf install -y \
 	openscap-containers \
 	podman-docker \
 	qemu \
+        restic \
 	rpmdevtools \
 	rpmlint \
 	tailscale \
