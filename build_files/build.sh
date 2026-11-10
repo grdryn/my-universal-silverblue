@@ -28,7 +28,7 @@ dnf install -y \
 	openscap-containers \
 	podman-docker \
 	qemu \
-        restic \
+	restic \
 	rpmdevtools \
 	rpmlint \
 	tailscale \
@@ -102,6 +102,45 @@ EOF
 for f in /etc/subuid /etc/subgid; do
 	grep -q '^containers:' "$f" || printf 'containers:100000:400000\n' >>"$f"
 done
+
+### Quadlet units
+# Ship image-managed unit defaults in /usr/share. A same-named file in
+# /etc/containers/systemd overrides these, and /etc changes survive
+# upgrades. The Quadlet generator applies [Install] sections at boot, so
+# these do not need systemctl enable.
+install -d -m 0755 /usr/share/containers/systemd
+install -m 0644 /ctx/quadlet/*.container /ctx/quadlet/*.pod \
+	/ctx/quadlet/*.volume /usr/share/containers/systemd/
+
+### Editable configuration defaults
+# These live in /etc so they can be edited per machine. Once modified,
+# bootc's /etc three-way merge preserves the local version across upgrades.
+# No secrets are baked here.
+install -D -m 0644 /ctx/etc/containers/systemd/immich.env \
+	/etc/containers/systemd/immich.env
+install -D -m 0644 /ctx/etc/caddy/Caddyfile /etc/caddy/Caddyfile
+install -D -m 0644 /ctx/etc/caddy/sites/immich.caddy \
+	/etc/caddy/sites/immich.caddy
+install -D -m 0644 /ctx/etc/caddy/acme-cert.env /etc/caddy/acme-cert.env
+
+# Runtime directories for the bind-mounted container data.
+install -D -m 0644 /ctx/usr/lib/tmpfiles.d/immich.conf \
+	/usr/lib/tmpfiles.d/immich.conf
+install -D -m 0644 /ctx/usr/lib/tmpfiles.d/caddy.conf \
+	/usr/lib/tmpfiles.d/caddy.conf
+
+### Caddy ACME certificate helper
+# Keep this in /usr/libexec: /usr/local is a symlink to /var/usrlocal on
+# bootc and is therefore mutable state, not image content.
+install -D -m 0755 /ctx/usr/libexec/caddy-acme-certs-update \
+	/usr/libexec/caddy-acme-certs-update
+install -m 0644 \
+	/ctx/usr/lib/systemd/system/caddy-acme-certs-bootstrap.service \
+	/ctx/usr/lib/systemd/system/caddy-acme-certs-renew.service \
+	/ctx/usr/lib/systemd/system/caddy-acme-certs.timer \
+	/usr/lib/systemd/system/
+# Regular units are not managed by the Quadlet generator, so enable the timer.
+systemctl enable caddy-acme-certs.timer
 
 # TODO: not sure if best solution
 # workaround bootc container lint warnings

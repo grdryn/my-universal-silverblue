@@ -1,0 +1,11 @@
+[Unit]
+Description=Renew ACME certificate secrets for Caddy
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/caddy/acme-cert.env
+StateDirectory=caddy-acme-certs
+StateDirectoryMode=0700
+ExecStart=/bin/sh /usr/libexec/caddy-acme-certs-update renew

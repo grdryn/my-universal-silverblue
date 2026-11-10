@@ -1,0 +1,9 @@
+photos.example.com {
+    tls /run/secrets/caddy.crt /run/secrets/caddy.key
+
+    request_body {
+        max_size 50GB
+    }
+
+    reverse_proxy http://host.containers.internal:2283
+}

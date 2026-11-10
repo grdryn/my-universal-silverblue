@@ -1,0 +1,35 @@
+[Unit]
+Description=Immich server
+Requires=immich-postgres.container immich-redis.container
+After=immich-postgres.container immich-redis.container
+RequiresMountsFor=/var/srv/immich/library
+
+[Container]
+Image=ghcr.io/immich-app/immich-server:v3
+ContainerName=immich-server
+Pod=immich.pod
+StartWithPod=true
+CgroupsMode=enabled
+EnvironmentFile=/etc/containers/systemd/immich.env
+Secret=source=immich-db-password,type=env,target=DB_PASSWORD
+Volume=/var/srv/immich/library:/data:Z,U
+Volume=/etc/localtime:/etc/localtime:ro
+HealthCmd=immich-healthcheck
+HealthInterval=30s
+HealthRetries=5
+HealthStartPeriod=5m
+HealthTimeout=10s
+Pull=missing
+Notify=healthy
+HealthOnFailure=kill
+NoNewPrivileges=true
+DropCapability=NET_RAW
+StopTimeout=30
+
+[Service]
+Restart=always
+RestartSec=5s
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

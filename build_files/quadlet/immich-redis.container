@@ -1,0 +1,28 @@
+[Unit]
+Description=Immich Valkey
+
+[Container]
+Image=docker.io/valkey/valkey:9@sha256:70739f85ad2ee01a726a965584a0f94895f01b0c60b3cc8b0aeef11eaa6888cf
+ContainerName=immich-redis
+Pod=immich.pod
+StartWithPod=true
+CgroupsMode=enabled
+HealthCmd=redis-cli ping | grep -q PONG
+HealthInterval=30s
+HealthRetries=5
+HealthStartPeriod=30s
+HealthTimeout=10s
+Pull=missing
+Notify=healthy
+HealthOnFailure=kill
+NoNewPrivileges=true
+DropCapability=NET_RAW
+StopTimeout=30
+
+[Service]
+Restart=always
+RestartSec=5s
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,11 @@
+[Unit]
+Description=Immich application pod
+
+[Pod]
+PodName=immich
+UserNS=auto
+PublishPort=2283:2283
+ShmSize=128m
+
+[Install]
+WantedBy=multi-user.target

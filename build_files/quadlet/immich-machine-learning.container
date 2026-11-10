@@ -1,0 +1,30 @@
+[Unit]
+Description=Immich machine learning
+
+[Container]
+Image=ghcr.io/immich-app/immich-machine-learning:v3
+ContainerName=immich-machine-learning
+Pod=immich.pod
+StartWithPod=true
+CgroupsMode=enabled
+EnvironmentFile=/etc/containers/systemd/immich.env
+Volume=immich-model-cache.volume:/cache
+HealthCmd=python3 healthcheck.py
+HealthInterval=30s
+HealthRetries=5
+HealthStartPeriod=5m
+HealthTimeout=10s
+Pull=missing
+Notify=healthy
+HealthOnFailure=kill
+NoNewPrivileges=true
+DropCapability=NET_RAW
+StopTimeout=30
+
+[Service]
+Restart=always
+RestartSec=5s
+TimeoutStartSec=900
+
+[Install]
+WantedBy=multi-user.target

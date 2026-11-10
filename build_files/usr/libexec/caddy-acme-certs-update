@@ -1,0 +1,73 @@
+#!/bin/sh
+set -eu
+
+mode="${1:-renew}"
+: "${ACME_DOMAIN:?ACME_DOMAIN is required}"
+: "${ACME_EMAIL:?ACME_EMAIL is required}"
+: "${GANDIV5_PERSONAL_ACCESS_TOKEN_FILE:?GANDIV5_PERSONAL_ACCESS_TOKEN_FILE is required}"
+
+lego_bin="${LEGO_BIN:-/usr/bin/lego}"
+acme_server="${ACME_SERVER:-https://acme-v02.api.letsencrypt.org/directory}"
+
+case "$mode" in
+    bootstrap|renew)
+        ;;
+    *)
+        echo "unsupported mode: $mode" >&2
+        exit 2
+        ;;
+esac
+
+state_dir="${STATE_DIRECTORY:-/var/lib/caddy-acme-certs}"
+lego_dir="$state_dir/lego"
+
+if [ ! -x "$lego_bin" ]; then
+    echo "lego binary not found: $lego_bin" >&2
+    exit 1
+fi
+
+if [ ! -r "$GANDIV5_PERSONAL_ACCESS_TOKEN_FILE" ]; then
+    echo "Gandi PAT file is not readable: $GANDIV5_PERSONAL_ACCESS_TOKEN_FILE" >&2
+    exit 1
+fi
+
+mkdir -p "$lego_dir"
+
+run_lego() {
+    "$lego_bin" \
+        run \
+        --accept-tos \
+        --email "$ACME_EMAIL" \
+        --dns gandiv5 \
+        --domains "$ACME_DOMAIN" \
+        --path "$lego_dir" \
+        --server "$acme_server" \
+        --renew-days 30
+}
+
+run_lego
+
+cert_file="$lego_dir/certificates/$ACME_DOMAIN.crt"
+key_file="$lego_dir/certificates/$ACME_DOMAIN.key"
+
+if [ ! -r "$cert_file" ] || [ ! -r "$key_file" ]; then
+    echo "lego did not produce certificate files for $ACME_DOMAIN" >&2
+    exit 1
+fi
+
+mkdir -p "$state_dir"
+if [ -f "$state_dir/caddy.crt" ] && [ -f "$state_dir/caddy.key" ] \
+    && cmp -s "$cert_file" "$state_dir/caddy.crt" \
+    && cmp -s "$key_file" "$state_dir/caddy.key"; then
+    exit 0
+fi
+
+podman secret create --replace caddy-cert "$cert_file"
+podman secret create --replace caddy-key "$key_file"
+
+install -m 0644 "$cert_file" "$state_dir/caddy.crt"
+install -m 0600 "$key_file" "$state_dir/caddy.key"
+
+if [ "$mode" = renew ]; then
+    systemctl restart caddy.service
+fi

@@ -130,6 +130,43 @@ The [Containerfile](./Containerfile) defines the operations used to customize th
 
 The [build.sh](./build_files/build.sh) file is called from your Containerfile. It is the best place to install new packages or make any other customization to your system. There are customization examples contained within it for your perusal.
 
+## Container services (Podman Quadlets)
+
+The image ships rootful Podman Quadlets as image-managed defaults in `/usr/share/containers/systemd/`. They are replaced atomically on upgrade, and a same-named file in `/etc/containers/systemd/` overrides them. The Quadlet generator applies each unit's `[Install]` section at boot, so the containers do not need `systemctl enable`.
+
+Bundled services: **Immich** and **Caddy** (reverse proxy with ACME certificates).
+
+Editable defaults are installed in `/etc`:
+
+- `/etc/containers/systemd/immich.env`
+- `/etc/caddy/Caddyfile`
+- `/etc/caddy/sites/immich.caddy`
+- `/etc/caddy/acme-cert.env`
+
+bootc performs a three-way merge of `/etc` on upgrades. A file that has been edited locally is preserved and will not be overwritten; a file that has not been edited follows the image's new defaults. Editing one of these files therefore opts it out of future image updates.
+
+### First-boot setup
+
+1. Replace the placeholder domains and email in `Caddyfile`, `sites/immich.caddy`, and `acme-cert.env`.
+2. Create the Gandi PAT file:
+   ```bash
+   sudo install -m 600 /dev/null /etc/caddy/gandi-pat
+   sudoedit /etc/caddy/gandi-pat
+   ```
+3. Create the Immich database password secret:
+   ```bash
+   sudo podman secret create immich-db-password <path-to-password-file>
+   ```
+4. Restart the services:
+   ```bash
+   sudo systemctl restart caddy-acme-certs-bootstrap.service
+   sudo systemctl restart caddy.service immich-pod.service
+   ```
+
+The ACME bootstrap service runs before Caddy (`Requires=` in `caddy.container`) and creates the `caddy-cert` and `caddy-key` Podman secrets. `caddy-acme-certs.timer` renews them weekly. Caddy will not start until the placeholder configuration is replaced and the PAT file exists.
+
+Secrets (`/etc/caddy/gandi-pat` and Podman secret payloads) are never baked into the image.
+
 ## build.yml
 
 The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name. There are several environment variables at the start of the workflow which may be of interest to change.

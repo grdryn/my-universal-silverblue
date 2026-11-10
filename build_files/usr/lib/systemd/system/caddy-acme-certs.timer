@@ -1,0 +1,12 @@
+[Unit]
+Description=Renew ACME Caddy certificates weekly
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=7d
+RandomizedDelaySec=1h
+Persistent=true
+Unit=caddy-acme-certs-renew.service
+
+[Install]
+WantedBy=timers.target
