@@ -4,7 +4,7 @@ Requires=caddy-acme-certs-bootstrap.service
 After=caddy-acme-certs-bootstrap.service
 
 [Container]
-Image=docker.io/library/caddy:2.11.4-alpine
+Image=docker.io/library/caddy:2.11.4-alpine@sha256:6aeddd44c3078b0f9a35206472a11420648a79c184603ef95957d0a20044cb2b
 ContainerName=caddy
 UserNS=auto
 Network=bridge
