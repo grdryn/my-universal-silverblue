@@ -2,7 +2,7 @@
 Description=Immich machine learning
 
 [Container]
-Image=ghcr.io/immich-app/immich-machine-learning:v3
+Image=ghcr.io/immich-app/immich-machine-learning:v3@sha256:f4e7275c9fbd956ed7bccc738ac57890bcbd9f9c17844d2ea0b137e38a083454
 ContainerName=immich-machine-learning
 Pod=immich.pod
 StartWithPod=true

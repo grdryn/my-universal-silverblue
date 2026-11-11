@@ -5,7 +5,7 @@ After=immich-postgres.container immich-redis.container
 RequiresMountsFor=/var/srv/immich/library
 
 [Container]
-Image=ghcr.io/immich-app/immich-server:v3
+Image=ghcr.io/immich-app/immich-server:v3@sha256:7b7b575029168bfb9eb901d868ce7dbfda0d7818e78aaace29b7b8a08cd4e7d5
 ContainerName=immich-server
 Pod=immich.pod
 StartWithPod=true
