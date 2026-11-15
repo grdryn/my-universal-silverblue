@@ -1,0 +1,7 @@
+[Unit]
+Description=Pocket ID data volume
+
+[Volume]
+Device=/var/srv/pocket-id
+Type=bind
+Options=bind

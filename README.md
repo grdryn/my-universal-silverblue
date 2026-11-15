@@ -139,28 +139,31 @@ Bundled services: **Immich** and **Caddy** (reverse proxy with ACME certificates
 Editable defaults are installed in `/etc`:
 
 - `/etc/containers/systemd/immich.env`
+- `/etc/containers/systemd/pocket-id.env`
 - `/etc/caddy/Caddyfile`
 - `/etc/caddy/sites/immich.caddy`
+- `/etc/caddy/sites/pocket-id.caddy`
 - `/etc/caddy/acme-cert.env`
 
 bootc performs a three-way merge of `/etc` on upgrades. A file that has been edited locally is preserved and will not be overwritten; a file that has not been edited follows the image's new defaults. Editing one of these files therefore opts it out of future image updates.
 
 ### First-boot setup
 
-1. Replace the placeholder domains and email in `Caddyfile`, `sites/immich.caddy`, and `acme-cert.env`.
+1. Replace the placeholder domains and email in `Caddyfile`, `sites/immich.caddy`, `sites/pocket-id.caddy`, and `acme-cert.env`. `acme-cert.env` issues one wildcard certificate (`*.example.com`), which covers every site block under `sites/`.
 2. Create the Gandi PAT file:
    ```bash
    sudo install -m 600 /dev/null /etc/caddy/gandi-pat
    sudoedit /etc/caddy/gandi-pat
    ```
-3. Create the Immich database password secret:
+3. Create the Immich database password and Pocket ID encryption key secrets:
    ```bash
    sudo podman secret create immich-db-password <path-to-password-file>
+   openssl rand -base64 32 | sudo podman secret create pocket-id-encryption-key -
    ```
 4. Restart the services:
    ```bash
    sudo systemctl restart caddy-acme-certs-bootstrap.service
-   sudo systemctl restart caddy.service immich-pod.service
+   sudo systemctl restart caddy.service immich-pod.service pocket-id.service
    ```
 
 The ACME bootstrap service runs before Caddy (`Requires=` in `caddy.container`) and creates the `caddy-cert` and `caddy-key` Podman secrets. `caddy-acme-certs.timer` renews them weekly. Caddy will not start until the placeholder configuration is replaced and the PAT file exists.

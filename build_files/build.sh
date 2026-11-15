@@ -118,14 +118,20 @@ install -m 0644 /ctx/quadlet/*.container /ctx/quadlet/*.pod \
 # No secrets are baked here.
 install -D -m 0644 /ctx/etc/containers/systemd/immich.env \
 	/etc/containers/systemd/immich.env
+install -D -m 0644 /ctx/etc/containers/systemd/pocket-id.env \
+	/etc/containers/systemd/pocket-id.env
 install -D -m 0644 /ctx/etc/caddy/Caddyfile /etc/caddy/Caddyfile
 install -D -m 0644 /ctx/etc/caddy/sites/immich.caddy \
 	/etc/caddy/sites/immich.caddy
+install -D -m 0644 /ctx/etc/caddy/sites/pocket-id.caddy \
+	/etc/caddy/sites/pocket-id.caddy
 install -D -m 0644 /ctx/etc/caddy/acme-cert.env /etc/caddy/acme-cert.env
 
 # Runtime directories for the bind-mounted container data.
 install -D -m 0644 /ctx/usr/lib/tmpfiles.d/immich.conf \
 	/usr/lib/tmpfiles.d/immich.conf
+install -D -m 0644 /ctx/usr/lib/tmpfiles.d/pocket-id.conf \
+	/usr/lib/tmpfiles.d/pocket-id.conf
 install -D -m 0644 /ctx/usr/lib/tmpfiles.d/caddy.conf \
 	/usr/lib/tmpfiles.d/caddy.conf
 

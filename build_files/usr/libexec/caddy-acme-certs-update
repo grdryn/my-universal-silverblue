@@ -21,6 +21,17 @@ esac
 state_dir="${STATE_DIRECTORY:-/var/lib/caddy-acme-certs}"
 lego_dir="$state_dir/lego"
 
+# Lego's DNS-01 propagation check queries recursive nameservers, but
+# systemd-resolved caches the NXDOMAIN for _acme-challenge.<zone> for the
+# SOA negative TTL (hours for Gandi), so the check times out even after the
+# record exists. Verify against the zone's authoritative nameservers
+# instead, which have no cache. Override with ACME_RESOLVERS if needed.
+zone="${ACME_DOMAIN#\*.}"
+resolvers="${ACME_RESOLVERS:-}"
+if [ -z "$resolvers" ] && command -v dig >/dev/null 2>&1; then
+	resolvers="$(dig +short NS "$zone" | grep -v CNAME | paste -sd ,)"
+fi
+
 if [ ! -x "$lego_bin" ]; then
     echo "lego binary not found: $lego_bin" >&2
     exit 1
@@ -34,21 +45,27 @@ fi
 mkdir -p "$lego_dir"
 
 run_lego() {
-    "$lego_bin" \
-        run \
-        --accept-tos \
-        --email "$ACME_EMAIL" \
-        --dns gandiv5 \
-        --domains "$ACME_DOMAIN" \
-        --path "$lego_dir" \
-        --server "$acme_server" \
-        --renew-days 30
+	set -- \
+		run \
+		--accept-tos \
+		--email "$ACME_EMAIL" \
+		--dns gandiv5 \
+		--domains "$ACME_DOMAIN" \
+		--path "$lego_dir" \
+		--server "$acme_server" \
+		--renew-days 30
+	if [ -n "$resolvers" ]; then
+		set -- "$@" --dns.resolvers "$resolvers"
+	fi
+	"$lego_bin" "$@"
 }
 
 run_lego
 
-cert_file="$lego_dir/certificates/$ACME_DOMAIN.crt"
-key_file="$lego_dir/certificates/$ACME_DOMAIN.key"
+# lego replaces "*" with "_" in stored certificate filenames, so a wildcard
+# ACME_DOMAIN is stored as _.example.com.crt.
+cert_file="$lego_dir/certificates/$(printf '%s' "$ACME_DOMAIN" | tr '*' '_').crt"
+key_file="$lego_dir/certificates/$(printf '%s' "$ACME_DOMAIN" | tr '*' '_').key"
 
 if [ ! -r "$cert_file" ] || [ ! -r "$key_file" ]; then
     echo "lego did not produce certificate files for $ACME_DOMAIN" >&2

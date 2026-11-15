@@ -1,0 +1,5 @@
+id.example.com {
+    tls /run/secrets/caddy.crt /run/secrets/caddy.key
+
+    reverse_proxy http://host.containers.internal:1411
+}
