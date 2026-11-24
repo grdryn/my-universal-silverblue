@@ -1,4 +1,4 @@
-ARG FEDORA_VERSION=45@sha256:36ebcb2f41b7487e78ca13f6e594691aa65f37dde4672ddac5c1d8b335e50da4
+ARG FEDORA_VERSION=45@sha256:dcb5422c4619acadabbba3877399bef14c0f910315a8972be81bd82e969335cb
 
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
